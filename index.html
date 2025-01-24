@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced LED Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Enhanced LED Grid Editor</h1>
+    <div class="controls">
+      <label for="gridSize">Grid Size:</label>
+      <select id="gridSize">
+        <option value="8">8x8</option>
+        <option value="16" selected>16x16</option>
+        <option value="32">32x32</option>
+      </select>
+      <input type="file" id="uploadImage" accept="image/*" hidden>
+      <button id="uploadButton">Upload Image</button>
+      <button id="undo">Undo</button>
+      <button id="redo">Redo</button>
+    </div>
+    <div class="grid"></div>
+    <div class="palette-container">
+      <h2>Custom Palette</h2>
+      <input type="color" id="colorPicker" value="#ff0000">
+      <button id="saveColor">Save Color</button>
+      <div id="palette"></div>
+    </div>
+    <div class="export-controls">
+      <button id="exportPNG">Export Color Reference (PNG)</button>
+      <button id="exportGray">Export Grayscale (PNG)</button>
+      <button id="exportJSON">Export Design (JSON)</button>
+    </div>
+  </div>
+  <script src="script.js"></script>
+<div id="reducedColors" class="reduced-colors"></div>
+</body>
+</html>
