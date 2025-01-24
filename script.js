@@ -1,146 +1,19 @@
 const grid = document.querySelector('.grid');
-const gridSizeSelector = document.getElementById('gridSize');
-const uploadButton = document.getElementById('uploadButton');
-const uploadImage = document.getElementById('uploadImage');
-const undoButton = document.getElementById('undo');
-const redoButton = document.getElementById('redo');
-const colorPicker = document.getElementById('colorPicker');
-const saveColorButton = document.getElementById('saveColor');
 const reducedColorsContainer = document.getElementById('reducedColors');
-let currentColor = colorPicker.value;
 let gridSize = 16;
-let history = [];
-let redoStack = [];
-let reducedColors = []; // To hold reduced colors globally
+let reducedColors = []; // Hold reduced colors globally
 
-// Generate grid dynamically
-function generateGrid(size) {
-  gridSize = size;
-  grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-  grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
-
-  for (let i = 0; i < size * size; i++) {
-    const cell = document.createElement('div');
-    cell.dataset.index = i;
-    cell.style.backgroundColor = '#fff';
-    grid.appendChild(cell);
-
-    cell.addEventListener('click', () => {
-      saveToHistory();
-      cell.style.backgroundColor = currentColor;
-    });
-  }
-}
-
-// Save current grid state to history
-function saveToHistory() {
-  const gridState = Array.from(grid.children).map(cell => cell.style.backgroundColor);
-  history.push(gridState);
-  redoStack = [];
-}
-
-// Undo functionality
-undoButton.addEventListener('click', () => {
-  if (history.length > 0) {
-    const lastState = history.pop();
-    redoStack.push(Array.from(grid.children).map(cell => cell.style.backgroundColor));
-    applyGridState(lastState);
-  }
-});
-
-// Redo functionality
-redoButton.addEventListener('click', () => {
-  if (redoStack.length > 0) {
-    const nextState = redoStack.pop();
-    saveToHistory();
-    applyGridState(nextState);
-  }
-});
-
-// Apply a grid state
-function applyGridState(state) {
-  Array.from(grid.children).forEach((cell, i) => {
-    cell.style.backgroundColor = state[i];
-  });
-}
-
-// Handle color picker changes
-colorPicker.addEventListener('input', e => {
-  currentColor = e.target.value;
-});
-
-// Handle image upload
-uploadButton.addEventListener('click', () => uploadImage.click());
-
-uploadImage.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = event => {
-    const img = new Image();
-    img.src = event.target.result;
-    img.onload = () => {
-      processImageWithoutReduction(img);
-    };
-  };
-  reader.readAsDataURL(file);
-});
-
-// Process image: Resize to grid size and display original colors in the grid
-function processImageWithoutReduction(img) {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = gridSize;
-  canvas.height = gridSize;
-
-  ctx.drawImage(img, 0, 0, gridSize, gridSize);
-  const imageData = ctx.getImageData(0, 0, gridSize, gridSize);
-
-  Array.from(grid.children).forEach((cell, i) => {
-    const r = imageData.data[i * 4];
-    const g = imageData.data[i * 4 + 1];
-    const b = imageData.data[i * 4 + 2];
-    cell.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-  });
-
-  reducedColors = quantizeImage(imageData, 16);
-  displayReducedColors(reducedColors);
-}
-
-// Display reduced colors below the grid
-function displayReducedColors(colors) {
-  reducedColorsContainer.innerHTML = '';
-  colors.forEach((color, index) => {
-    const colorBox = document.createElement('div');
-    colorBox.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-    colorBox.textContent = index + 1;
-    colorBox.className = 'color-box';
-    reducedColorsContainer.appendChild(colorBox);
-  });
-}
-
-// Quantize image to reduce to a fixed number of colors
-function quantizeImage(imageData, numColors) {
-  const { data } = imageData;
-  const colorMap = new Map();
-  for (let i = 0; i < data.length; i += 4) {
-    const colorKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-    if (!colorMap.has(colorKey) && colorMap.size < numColors) {
-      colorMap.set(colorKey, [data[i], data[i + 1], data[i + 2]]);
-    }
-  }
-  return Array.from(colorMap.values());
-}
-
-// Export grid to Grayscale PNG with numbering
+// Improved Grayscale Export
 document.getElementById('exportGray').addEventListener('click', () => {
   const canvas = document.createElement('canvas');
   canvas.width = gridSize * 20;
   canvas.height = gridSize * 20;
   const ctx = canvas.getContext('2d');
 
+  // Debug: Log reduced colors to verify mapping
+  console.log("Reduced Colors:", reducedColors);
+
+  // Map each cell to reduced colors
   Array.from(grid.children).forEach((cell, i) => {
     const x = (i % gridSize) * 20;
     const y = Math.floor(i / gridSize) * 20;
@@ -151,27 +24,52 @@ document.getElementById('exportGray').addEventListener('click', () => {
 
     if (index > 0) {
       const [r, g, b] = reducedColors[index - 1];
-      const grayscale = Math.round((r + g + b) / 3);
+      const grayscale = Math.round((r + g + b) / 3); // Compute grayscale
+
+      // Draw cell background in grayscale
       ctx.fillStyle = `rgb(${grayscale}, ${grayscale}, ${grayscale})`;
       ctx.fillRect(x, y, 20, 20);
 
-      // Draw the number
-      ctx.fillStyle = grayscale > 128 ? '#000' : '#fff'; // Adjust number visibility
+      // Draw number in the cell
+      ctx.fillStyle = grayscale > 128 ? '#000' : '#fff'; // Adjust text color for visibility
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(index, x + 10, y + 10);
     } else {
+      // Default for cells with no matching reduced color
       ctx.fillStyle = '#fff';
       ctx.fillRect(x, y, 20, 20);
     }
   });
 
+  // Download as PNG
   const link = document.createElement('a');
-  link.download = 'grayscale_with_numbers.png';
+  link.download = 'grayscale_with_numbers_debugged.png';
   link.href = canvas.toDataURL();
   link.click();
 });
 
-// Initialize the app
+// Initialize grid for testing
+function generateGrid(size) {
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+
+  for (let i = 0; i < size * size; i++) {
+    const cell = document.createElement('div');
+    cell.dataset.index = i;
+    cell.style.backgroundColor = '#fff';
+    grid.appendChild(cell);
+  }
+}
+
+// Sample reduced colors for testing
+reducedColors = [
+  [0, 0, 0], [255, 255, 255], [128, 128, 128], [192, 192, 192],
+  [64, 64, 64], [160, 160, 160], [96, 96, 96], [32, 32, 32],
+  [200, 200, 200], [120, 120, 120], [80, 80, 80], [40, 40, 40],
+  [220, 220, 220], [140, 140, 140], [60, 60, 60], [180, 180, 180]
+];
+
 generateGrid(gridSize);
