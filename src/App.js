@@ -35,6 +35,7 @@ function drawGrid() {
         for (let x = 0; x < gridSize; x++) {
             ctx.fillStyle = grid[y][x];
             ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            ctx.strokeStyle = '#d3d3d3'; // Light gray for grid lines
             ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
         }
     }
@@ -47,13 +48,28 @@ function saveHistory() {
 }
 
 // Set up event listeners
-document.getElementById('brushTool').addEventListener('click', () => currentTool = 'brush');
-document.getElementById('eraserTool').addEventListener('click', () => currentTool = 'eraser');
-document.getElementById('colorFillerTool').addEventListener('click', () => currentTool = 'colorFiller');
-document.getElementById('eyedropperTool').addEventListener('click', () => currentTool = 'eyedropper');
+document.getElementById('brushTool').addEventListener('click', () => {
+    currentTool = 'brush';
+    console.log('Brush tool selected');
+});
+document.getElementById('eraserTool').addEventListener('click', () => {
+    currentTool = 'eraser';
+    console.log('Eraser tool selected');
+});
+document.getElementById('colorFillerTool').addEventListener('click', () => {
+    currentTool = 'colorFiller';
+    console.log('Color Filler tool selected');
+});
+document.getElementById('eyedropperTool').addEventListener('click', () => {
+    currentTool = 'eyedropper';
+    console.log('Eyedropper tool selected');
+});
 document.getElementById('undoTool').addEventListener('click', undo);
 document.getElementById('redoTool').addEventListener('click', redo);
-document.getElementById('colorPicker').addEventListener('input', (e) => currentColor = e.target.value);
+document.getElementById('colorPicker').addEventListener('input', (e) => {
+    currentColor = e.target.value;
+    console.log(`Color selected: ${currentColor}`);
+});
 document.getElementById('gridSize').addEventListener('input', (e) => {
     gridSize = parseInt(e.target.value);
     initializeGrid(gridSize);
